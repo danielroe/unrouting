@@ -832,121 +832,121 @@ describe('regexp support', () => {
     expect(result).toMatchInlineSnapshot(`
       {
         "[...slug].vue": {
-          "regexp": "/^(?:\\/(?<slug>.*))?\\/?$/",
+          "regexp": "/^[\\s\\S]*$(?<=^(?:\\/(?<slug>.*?))??\\/??)/",
           "result": {
             "slug": "file/here/we/go",
           },
         },
         "[[c3@3c]].vue": {
-          "regexp": "/^(?:\\/(?<c33c>[^/]*))?\\/?$/",
+          "regexp": "/^[\\s\\S]*$(?<=^(?:\\/(?<c33c>[^/]*?))??\\/??)/",
           "result": {
             "c33c": "file",
           },
         },
         "[[d4-4d]].vue": {
-          "regexp": "/^(?:\\/(?<d44d>[^/]*))?\\/?$/",
+          "regexp": "/^[\\s\\S]*$(?<=^(?:\\/(?<d44d>[^/]*?))??\\/??)/",
           "result": {
             "d44d": "file",
           },
         },
         "[[foo]]/index.vue": {
-          "regexp": "/^(?:\\/(?<foo>[^/]*))?\\/?$/",
+          "regexp": "/^[\\s\\S]*$(?<=^(?:\\/(?<foo>[^/]*?))??\\/??)/",
           "result": {
             "foo": "some",
           },
         },
         "[[slug]]+.vue": {
-          "regexp": "/^(?:\\/(?<slug>[^/]*(?:\\/[^/]+)*))?\\/?$/",
+          "regexp": "/^[\\s\\S]*$(?<=^(?:\\/(?<slug>(?:(?:[^/]|\\/(?!\\/))*?[^/])??))??\\/??)/",
           "result": {
             "slug": "file/here/we/go",
           },
         },
         "[[sub]]/route-[slug].vue": {
-          "regexp": "/^(?:\\/(?<sub>[^/]*))?\\/route\\x2d(?<slug>[^/]+)\\/?$/",
+          "regexp": "/^[\\s\\S]*$(?<=^(?:\\/(?<sub>[^/]*?))??\\/route\\x2d(?<slug>[^/]+?)\\/??)/",
           "result": {
             "slug": "value",
             "sub": "some",
           },
         },
         "[a1_1a].vue": {
-          "regexp": "/^\\/(?<a1_1a>[^/]+)\\/?$/",
+          "regexp": "/^(?=\\/)[\\s\\S]*$(?<=^\\/(?<a1_1a>[^/]+?)\\/??)/",
           "result": {
             "a1_1a": "file",
           },
         },
         "[b2.2b].vue": {
-          "regexp": "/^\\/(?<b22b>[^/]+)\\/?$/",
+          "regexp": "/^(?=\\/)[\\s\\S]*$(?<=^\\/(?<b22b>[^/]+?)\\/??)/",
           "result": {
             "b22b": "file",
           },
         },
         "[b2]_[2b].vue": {
-          "regexp": "/^\\/(?<b2>[^/]+)_(?<_2b>[^/]+)\\/?$/",
+          "regexp": "/^(?=\\/)[\\s\\S]*$(?<=^\\/(?<b2>[^/]+?)_(?<_2b>(?:[^/](?:(?<!_)))*?[^/])\\/??)/",
           "result": {
             "_2b": "le",
             "b2": "fi",
           },
         },
         "[slug]+.vue": {
-          "regexp": "/^\\/(?<slug>[^/]+(?:\\/[^/]+)*)\\/?$/",
+          "regexp": "/^(?=\\/)[\\s\\S]*$(?<=^\\/(?<slug>(?!\\/)(?:[^/]|\\/(?!\\/))*?[^/])\\/??)/",
           "result": {
             "slug": "file/here/we/go",
           },
         },
         "[slug].vue": {
-          "regexp": "/^\\/(?<slug>[^/]+)\\/?$/",
+          "regexp": "/^(?=\\/)[\\s\\S]*$(?<=^\\/(?<slug>[^/]+?)\\/??)/",
           "result": {
             "slug": "file",
           },
         },
         "articles/[slug]+.vue": {
-          "regexp": "/^\\/articles\\/(?<slug>[^/]+(?:\\/[^/]+)*)\\/?$/",
+          "regexp": "/^(?=\\/articles\\/)[\\s\\S]*$(?<=^\\/articles\\/(?<slug>(?!\\/)(?:[^/]|\\/(?!\\/))*?[^/])\\/??)/",
           "result": {
             "slug": "here/we/go",
           },
         },
         "file.vue": {
-          "regexp": "/^\\/file\\/?$/",
+          "regexp": "/^(?=\\/file)[\\s\\S]*$(?<=^\\/file\\/??)/",
           "result": "/file",
         },
         "foo/index.vue": {
-          "regexp": "/^\\/foo\\/?$/",
+          "regexp": "/^(?=\\/foo)[\\s\\S]*$(?<=^\\/foo\\/??)/",
           "result": "/foo",
         },
         "index.vue": {
-          "regexp": "/^\\/?$/",
+          "regexp": "/^[\\s\\S]*$(?<=^\\/??)/",
           "result": "/",
         },
         "optional/[[opt]]-postfix.vue": {
-          "regexp": "/^\\/optional\\/(?<opt>[^/]*)\\x2dpostfix\\/?$/",
+          "regexp": "/^(?=\\/optional\\/)[\\s\\S]*$(?<=^\\/optional\\/(?<opt>[^/]*?)\\x2dpostfix\\/??)/",
           "result": {
             "opt": "some",
           },
         },
         "optional/[[opt]].vue": {
-          "regexp": "/^\\/optional(?:\\/(?<opt>[^/]*))?\\/?$/",
+          "regexp": "/^(?=\\/optional)[\\s\\S]*$(?<=^\\/optional(?:\\/(?<opt>[^/]*?))??\\/??)/",
           "result": {
             "opt": undefined,
           },
         },
         "optional/prefix-[[opt]]-postfix.vue": {
-          "regexp": "/^\\/optional\\/prefix\\x2d(?<opt>[^/]*)\\x2dpostfix\\/?$/",
+          "regexp": "/^(?=\\/optional\\/prefix\\x2d)[\\s\\S]*$(?<=^\\/optional\\/prefix\\x2d(?<opt>[^/]*?)\\x2dpostfix\\/??)/",
           "result": {
             "opt": "",
           },
         },
         "optional/prefix-[[opt]].vue": {
-          "regexp": "/^\\/optional\\/prefix\\x2d(?<opt>[^/]*)\\/?$/",
+          "regexp": "/^(?=\\/optional\\/prefix\\x2d)[\\s\\S]*$(?<=^\\/optional\\/prefix\\x2d(?<opt>[^/]*?)\\/??)/",
           "result": {
             "opt": "test",
           },
         },
         "test.html.vue": {
-          "regexp": "/^\\/test\\.html\\/?$/",
+          "regexp": "/^(?=\\/test\\.html)[\\s\\S]*$(?<=^\\/test\\.html\\/??)/",
           "result": "/test.html",
         },
         "test:name.vue": {
-          "regexp": "/^\\/test:name\\/?$/",
+          "regexp": "/^(?=\\/test:name)[\\s\\S]*$(?<=^\\/test:name\\/??)/",
           "result": "/test:name",
         },
       }
@@ -1194,7 +1194,9 @@ describe('toRegExp pattern matching', () => {
 
   it('should handle group-only segments', () => {
     const result = toRegExp(tree(['(group).vue']))
-    expect(result[0].pattern.toString()).toBe('/^\\/?$/')
+    expect(''.match(result[0].pattern)).toBeTruthy()
+    expect('/'.match(result[0].pattern)).toBeTruthy()
+    expect('/test'.match(result[0].pattern)).toBeFalsy()
     expect(result[0].keys).toEqual([])
   })
 
@@ -1211,7 +1213,10 @@ describe('toRegExp pattern matching', () => {
 
   it('should handle optional segments correctly', () => {
     const result = toRegExp(tree(['optional/[[param]]/more.vue']))
-    expect(result[0].pattern.toString()).toBe('/^\\/optional(?:\\/(?<param>[^/]*))?\\/more\\/?$/')
+    expect('/optional/more'.match(result[0].pattern)?.groups).toEqual({ param: undefined })
+    expect('/optional/x/more'.match(result[0].pattern)?.groups).toEqual({ param: 'x' })
+    expect('/optional//more'.match(result[0].pattern)?.groups).toEqual({ param: '' })
+    expect('/optional/x/y/more'.match(result[0].pattern)).toBeFalsy()
   })
 
   it('should handle static tokens with colons', () => {

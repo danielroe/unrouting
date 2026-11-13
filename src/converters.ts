@@ -907,61 +907,233 @@ function parseVueRouterSegment(segment: string): VueRouterPathToken[] {
 
 // --- RegExp ------------------------------------------------------------------
 
+// The emitted pattern is matched right to left inside a lookbehind, with lazy
+// quantifiers. For this grammar that yields the same captures as a greedy
+// left-to-right match of `^\/(?<a>[^/]+)...\/?$`. Each param is then guarded
+// so it never extends past a stop that provably dominates the ones beyond it,
+// which stops the engine from retrying splits that cannot succeed.
+
+type ParamType = Exclude<ParsedPathSegmentToken['type'], 'static' | 'group'>
+
+type RegExpItem
+  = | { kind: 'literal', value: string }
+    | { kind: 'param', type: ParamType, key: string }
+    | { kind: 'open' }
+    | { kind: 'close' }
+
+/** `N`: ordinary characters, `S`: `/`, `T`: line terminators. */
+type CharAtom = 'N' | 'S' | 'T'
+
+const PARAM_ATOMS: Record<ParamType, CharAtom[]> = {
+  'dynamic': ['N', 'T'],
+  'optional': ['N', 'T'],
+  'catchall': ['N', 'S'],
+  'repeatable': ['N', 'S', 'T'],
+  'optional-repeatable': ['N', 'S', 'T'],
+}
+
+/**
+ * Characters a param cannot absorb when extended to the right. `P` stands for
+ * a `//` pair or a trailing `/`, which repeatable params cannot contain.
+ */
+const PARAM_BARRIER: Record<ParamType, 'S' | 'T' | 'P'> = {
+  'dynamic': 'S',
+  'optional': 'S',
+  'catchall': 'T',
+  'repeatable': 'P',
+  'optional-repeatable': 'P',
+}
+
+const UNGUARDED_PARAM: Record<ParamType, string> = {
+  'dynamic': '[^/]+?',
+  'optional': '[^/]*?',
+  'catchall': '.*?',
+  'repeatable': '(?!\\/)(?:[^/]|\\/(?!\\/))*?[^/]',
+  'optional-repeatable': '(?:(?:[^/]|\\/(?!\\/))*?[^/])??',
+}
+
+/** One character of a param's content. */
+const PARAM_CHAR: Record<ParamType, string> = {
+  'dynamic': '[^/]',
+  'optional': '[^/]',
+  'catchall': '.',
+  'repeatable': '(?:[^/]|\\/(?!\\/))',
+  'optional-repeatable': '(?:[^/]|\\/(?!\\/))',
+}
+
+const BARRIER_CHAR = { S: '\\/', T: '[\\n\\r\\u2028\\u2029]' }
+
+const LINE_TERMINATOR_RE = /[\n\r\u2028\u2029]/
+
 export function toRegExp(tree: RouteTree): RegExpRoute[] {
   return flattenTree(tree).map((info) => {
     const keys: string[] = []
-    let source = '^'
+    const items: RegExpItem[] = []
 
     for (const segment of info.segments) {
-      let re = ''
+      const tokens: RegExpItem[] = []
       for (const token of segment) {
-        const key = sanitizeCaptureGroup(token.value)
-        switch (token.type) {
-          case 'group':
-            break
-          case 'static':
-            re += escapeStringRegexp(token.value)
-            break
-          case 'dynamic':
-            keys.push(key)
-            re += `(?<${key}>[^/]+)`
-            break
-          case 'optional':
-            keys.push(key)
-            re += `(?<${key}>[^/]*)`
-            break
-          case 'repeatable':
-            keys.push(key)
-            re += `(?<${key}>[^/]+(?:/[^/]+)*)`
-            break
-          case 'optional-repeatable':
-            keys.push(key)
-            re += `(?<${key}>[^/]*(?:/[^/]+)*)`
-            break
-          case 'catchall':
-            keys.push(key)
-            re += `(?<${key}>.*)`
-            break
+        if (token.type === 'group')
+          continue
+        if (token.type === 'static') {
+          if (token.value)
+            tokens.push({ kind: 'literal', value: token.value })
+          continue
         }
+        const key = sanitizeCaptureGroup(token.value)
+        keys.push(key)
+        tokens.push({ kind: 'param', type: token.type, key })
       }
+      if (!tokens.length)
+        continue
 
       const isOptional = segment.every(t =>
         t.type === 'optional' || t.type === 'catchall' || t.type === 'group' || t.type === 'optional-repeatable',
       )
-      if (re) {
-        source += isOptional
-          ? `(?:\\/${re})?`
-          : `\\/${re}`
+      if (isOptional)
+        items.push({ kind: 'open' }, { kind: 'literal', value: '/' }, ...tokens, { kind: 'close' })
+      else
+        items.push({ kind: 'literal', value: '/' }, ...tokens)
+    }
+
+    let source = ''
+    for (const [index, item] of items.entries()) {
+      switch (item.kind) {
+        case 'literal':
+          source += escapeRegExpLiteral(item.value)
+          break
+        case 'open':
+          source += '(?:'
+          break
+        case 'close':
+          source += ')??'
+          break
+        case 'param':
+          source += `(?<${item.key}>${regExpParam(items, index, item.type)})`
+          break
       }
     }
 
-    source += '\\/?$'
+    // rejects a mismatched static prefix before the lookbehind tries any split
+    let prefix = ''
+    for (const item of items) {
+      if (item.kind !== 'literal')
+        break
+      prefix += item.value
+    }
+    const prefixGuard = prefix
+      ? `(?=${escapeRegExpLiteral(prefix)})`
+      : ''
+
     return {
-      pattern: new RegExp(source),
+      pattern: new RegExp(`^${prefixGuard}[\\s\\S]*$(?<=^${source}\\/??)`),
       keys,
       file: info.file,
     }
   })
+}
+
+function escapeRegExpLiteral(value: string): string {
+  return escapeStringRegexp(value).replace(/\//g, '\\/')
+}
+
+function charAtoms(value: string): Set<CharAtom> {
+  const atoms = new Set<CharAtom>()
+  for (const char of value) {
+    atoms.add(char === '/'
+      ? 'S'
+      : LINE_TERMINATOR_RE.test(char)
+        ? 'T'
+        : 'N')
+  }
+  return atoms
+}
+
+/**
+ * The literal text between a param and the nearest param (or optional segment)
+ * on its left, and the type of the param that would absorb extra text there.
+ */
+function leftContext(items: RegExpItem[], index: number): { literal: string, absorber?: ParamType } {
+  let literal = ''
+  for (let i = index - 1; i >= 0; i--) {
+    const item = items[i]!
+    if (item.kind === 'literal') {
+      literal = item.value + literal
+    }
+    else if (item.kind === 'param') {
+      return { literal, absorber: item.type }
+    }
+    else if (item.kind === 'close') {
+      // optional segments contain only params, so the last item is one
+      return { literal, absorber: (items[i - 1] as Extract<RegExpItem, { kind: 'param' }>).type }
+    }
+  }
+  return { literal }
+}
+
+function regExpParam(items: RegExpItem[], index: number, type: ParamType): string {
+  const { literal, absorber } = leftContext(items, index)
+  if (!absorber)
+    return UNGUARDED_PARAM[type]
+
+  const atoms = PARAM_ATOMS[type]
+  const barrier = PARAM_BARRIER[absorber]
+  const literalAtoms = charAtoms(literal)
+
+  // A stop only dominates later ones if the absorber can take up the text
+  // between them, so give up on guarding when the literal itself blocks that.
+  if ([...literalAtoms].some(a => !atoms.includes(a)) || literalAtoms.has(barrier as CharAtom) || literal.includes('//'))
+    return UNGUARDED_PARAM[type]
+
+  const char = PARAM_CHAR[type]
+  const escaped = escapeRegExpLiteral(literal)
+  const before = barrier === 'P'
+    ? '[^/]'
+    : ''
+  const notStop = literal || before
+    ? `(?<!${before}${escaped})`
+    : '(?!)'
+  const stopGuard = type === 'repeatable'
+    ? `(?:(?=\\/)|(?!\\/)${notStop})`
+    : `(?:${notStop})`
+
+  // Pass points start a new class of stops: crossing one puts a barrier
+  // between the absorber and any stop further left.
+  let passPoint: string | undefined
+  let notPassPoint: string | undefined
+  if (barrier !== 'P' && atoms.includes(barrier)) {
+    passPoint = `(?=${BARRIER_CHAR[barrier]})`
+    notPassPoint = `(?!${BARRIER_CHAR[barrier]})`
+  }
+  else if (barrier === 'P' && (type === 'catchall' || (type === 'optional-repeatable' && literal.endsWith('/')))) {
+    const tail = literal.length > 1
+      ? `[\\s\\S]{${literal.length - 1}}`
+      : ''
+    passPoint = `(?<=\\/(?=\\/)${tail})`
+    notPassPoint = `(?<!\\/(?=\\/)${tail})`
+  }
+
+  let body: string
+  if (passPoint) {
+    const fresh = `(?:(?:${char}${stopGuard}${notPassPoint})*?${char}${stopGuard})??`
+    const pass = `${passPoint}(?:${char}${notPassPoint})*${char}`
+    body = `${fresh}(?:${pass})*?`
+  }
+  else {
+    body = `(?:${char}${stopGuard})*?`
+  }
+
+  switch (type) {
+    case 'dynamic':
+      return `${body}[^/]`
+    case 'optional':
+    case 'catchall':
+      return body
+    case 'repeatable':
+      return `(?!\\/)${body}[^/]`
+    case 'optional-repeatable':
+      return `(?:${body}[^/])??`
+  }
 }
 
 // --- Route ordering ----------------------------------------------------------

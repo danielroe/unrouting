@@ -119,7 +119,7 @@ const rou3Routes = toRou3(tree)
 
 // RegExp – matcher patterns with named groups
 const regexpRoutes = toRegExp(tree)
-// [{ pattern: /^\/users\/(?<id>[^/]+)\/posts\/(?<slug>[^/]+)\/?$/, keys: ['id', 'slug'], file: '...' }]
+// [{ pattern: /^(?=\/users\/)[\s\S]*$(?<=^\/users\/(?<id>[^/]+?)\/posts\/(?<slug>[^/]+?)\/??)/, keys: ['id', 'slug'], file: '...' }]
 ```
 
 ### Incremental updates (dev server)
@@ -362,7 +362,7 @@ const { patterns, issues } = vueRouterToRou3('/products/:id(\\d+)', { collapse: 
 
 ### `toRegExp(tree)`
 
-Emit RegExp matchers from a tree.
+Emit RegExp matchers from a tree. Params are exposed as named capture groups, in the order listed in `keys`. Patterns use lookbehind assertions, which Node.js and current browsers support.
 
 ```ts
 function toRegExp(tree: RouteTree): RegExpRoute[]
@@ -373,6 +373,8 @@ interface RegExpRoute {
   file: string
 }
 ```
+
+Some routes with several catch-all or repeatable params can still take polynomial time to match a crafted path, mostly where two params sit directly next to each other in one segment. If you match untrusted paths against routes like these, limit the path length first.
 
 ### `rou3PatternToURLPattern(pattern, options?)`
 
