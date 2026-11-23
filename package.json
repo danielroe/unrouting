@@ -16,7 +16,7 @@
   },
   "description": "",
   "license": "MIT",
-  "repository": "unjs/unrouting",
+  "repository": "danielroe/unrouting",
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs"

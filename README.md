@@ -590,11 +590,11 @@ Published under [MIT License](./LICENCE).
 [npm-version-href]: https://npmx.dev/package/unrouting
 [npm-downloads-src]: https://npmx.dev/api/registry/badge/downloads/unrouting
 [npm-downloads-href]: https://npmx.dev/package/unrouting
-[codecov-src]: https://img.shields.io/codecov/c/gh/unjs/unrouting/main?style=flat&colorA=18181B&colorB=F0DB4F
-[codecov-href]: https://codecov.io/gh/unjs/unrouting
+[codecov-src]: https://img.shields.io/codecov/c/gh/danielroe/unrouting/main?style=flat&colorA=18181B&colorB=F0DB4F
+[codecov-href]: https://codecov.io/gh/danielroe/unrouting
 [bundle-src]: https://img.shields.io/bundlephobia/minzip/unrouting?style=flat&colorA=18181B&colorB=F0DB4F
 [bundle-href]: https://bundlephobia.com/result?p=unrouting
-[license-src]: https://img.shields.io/github/license/unjs/unrouting.svg?style=flat&colorA=18181B&colorB=F0DB4F
-[license-href]: https://github.com/unjs/unrouting/blob/main/LICENSE
+[license-src]: https://img.shields.io/github/license/danielroe/unrouting.svg?style=flat&colorA=18181B&colorB=F0DB4F
+[license-href]: https://github.com/danielroe/unrouting/blob/main/LICENSE
 [jsdocs-src]: https://img.shields.io/badge/jsDocs.io-reference-18181B?style=flat&colorA=18181B&colorB=F0DB4F
 [jsdocs-href]: https://www.jsdocs.io/package/unrouting
