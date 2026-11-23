@@ -10,7 +10,7 @@
     },
     "packageManager": {
       "name": "pnpm",
-      "version": "12.21.0",
+      "version": "12.22.0",
       "onFail": "download"
     }
   },
@@ -49,7 +49,7 @@
     "@vitest/coverage-v8": "5.1.0",
     "bumpp": "12.3.0",
     "eslint": "10.15.0",
-    "lint-staged": "17.6.1",
+    "lint-staged": "17.6.2",
     "pkg-pr-new": "0.0.94",
     "radix3": "1.1.2",
     "rou3": "1.0.0",
